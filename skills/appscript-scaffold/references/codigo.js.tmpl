@@ -1,0 +1,34 @@
+/**
+ * Runs on Sheet open — builds the custom menu.
+ */
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('{{MENU_LABEL}}')
+    .addItem('Opción 1', 'funcion1')
+    .addItem('Opción 2', 'funcion2')
+    .addToUi();
+}
+
+function funcion1() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getActiveSheet();
+  hoja.getRange('A1').setValue('Hola desde Apps Script ' + new Date());
+  SpreadsheetApp.getUi().alert('Operación completada');
+}
+
+function funcion2() {
+  const datos = obtenerDatos();
+  procesarDatos(datos);
+}
+
+function obtenerDatos() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getActiveSheet();
+  return hoja.getRange('A2:C').getValues();
+}
+
+function procesarDatos(datos) {
+  datos.forEach((fila, index) => {
+    Logger.log(`Fila ${index}: ${fila.join(', ')}`);
+  });
+}
