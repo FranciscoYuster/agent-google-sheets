@@ -1,0 +1,23 @@
+{
+  "name": "agent-google-sheets",
+  "owner": {
+    "name": "FranciscoYuster"
+  },
+  "metadata": {
+    "description": "Agent Skills for Google Apps Script + Sheets client projects",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "agent-google-sheets",
+      "description": "Google Sheets MCP operations, clasp push/pull/deploy with login validation, and scaffolding for new Apps Script client projects.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/mcp-google-sheets",
+        "./skills/clasp",
+        "./skills/appscript-scaffold"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+name: Lint skills
+
+on:
+  pull_request:
+    paths:
+      - 'skills/**'
+  push:
+    branches: [master]
+    paths:
+      - 'skills/**'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate SKILL.md frontmatter
+        run: |
+          set -e
+          fail=0
+          for f in skills/*/SKILL.md; do
+            if ! head -1 "$f" | grep -q '^---$'; then
+              echo "::error file=$f::missing frontmatter delimiter"
+              fail=1
+            fi
+            if ! grep -q '^name:' "$f"; then
+              echo "::error file=$f::missing 'name' field"
+              fail=1
+            fi
+            if ! grep -q '^description:' "$f"; then
+              echo "::error file=$f::missing 'description' field"
+              fail=1
+            fi
+          done
+          exit $fail

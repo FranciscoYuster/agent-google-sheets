@@ -18,6 +18,12 @@ npx skills add FranciscoYuster/agent-google-sheets --skill clasp
 npx skills add FranciscoYuster/agent-google-sheets --skill appscript-scaffold
 ```
 
+### Claude Code plugin (alternative)
+```bash
+claude plugin marketplace add FranciscoYuster/agent-google-sheets
+claude plugin install agent-google-sheets@agent-google-sheets
+```
+
 ## Available Skills
 
 <details>
