@@ -24,9 +24,9 @@ This skill is client-agnostic — it never hardcodes a `spreadsheet_id`. Each pr
 
 ## Prerequisites (validate before any tool call)
 
-1. **Auth present.** Check `.claude/mcp-google-sheets-token.json` (or the path set in `TOKEN_PATH`) exists. If missing or the first call returns an auth/401 error, tell the user re-auth is needed (browser OAuth triggers automatically on next call) — don't silently retry in a loop.
-2. **Server enabled.** If `mcp__mcp-google-sheets__*` tools aren't in the active tool list, the MCP server isn't registered for this project. Check root `.mcp.json` (not `.claude/.mcp.json` — common misplacement) for the `mcp-google-sheets` entry before assuming it's broken.
-3. **Credentials scoped per dev.** `.claude/gcp-oauth.keys.json` and `.claude/mcp-google-sheets-token.json` are git-ignored and per-developer — never commit, never copy between machines as a shortcut.
+1. **Server enabled.** If `mcp__mcp-google-sheets__*` tools aren't in the active tool list, the MCP server isn't registered for this project — see Setup below. Check root `.mcp.json` (not `.claude/.mcp.json` — common misplacement) for the `mcp-google-sheets` entry before assuming it's broken.
+2. **Auth present.** Depends which auth method is configured (see Setup) — a credential-file setup needs `.claude/mcp-google-sheets-token.json` (or `TOKEN_PATH`) to exist; an ADC setup needs `gcloud auth application-default login` already run on this machine. If the first tool call returns an auth/401/403 error, tell the user re-auth is needed — don't silently retry in a loop.
+3. **Never assume credentials exist.** This skill ships with no credentials of any kind — installing it via `npx skills add` or `claude plugin install` gets you the `SKILL.md` only. A dev who just installed this on a new machine, or an external dev with no access to this org's GCP project, has nothing set up yet. Don't reference "the" `gcp-oauth.keys.json` as if it's guaranteed to exist — check first, and if missing, walk them through Setup below (ADC path first — it's the one that needs nothing from anyone else).
 
 ## Required Input
 
@@ -39,15 +39,39 @@ Never guess a `spreadsheet_id`. Resolve it one of these ways, in order:
 
 ## MCP Server
 
-**Name:** `mcp-google-sheets`
-**Auth:** OAuth 2.0 via `CREDENTIALS_PATH` / `TOKEN_PATH`
-**Requires:** Google Sheets API + Google Drive API enabled in GCP
+**Name:** `mcp-google-sheets` (xing5/mcp-google-sheets)
+**Requires:** Google Sheets API + Google Drive API enabled on whichever GCP project backs the chosen auth method.
 
-**Setup por dev** (archivos git-ignored, cada dev pone los suyos):
+### Setup — pick one method, in this priority order
+
+**Method 1: Application Default Credentials (ADC) — default recommendation, especially for a dev with no prior access to this org's GCP project.**
+
+Zero credential files, no OAuth client to create. One-time per dev machine:
+```bash
+gcloud auth application-default login \
+  --scopes=https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/spreadsheets,https://www.googleapis.com/auth/drive
+gcloud auth application-default set-quota-project <ANY_GCP_PROJECT_ID>   # free tier works; just needs Sheets+Drive API enabled
 ```
-.claude/gcp-oauth.keys.json       ← OAuth client credentials (de GCP Console)
-.claude/mcp-google-sheets-token.json  ← generado automático al autenticar
+Then register the server with no auth env vars at all — it falls through to ADC automatically:
+```bash
+claude mcp add mcp-google-sheets -s project -- uvx --with "mcp<2" mcp-google-sheets@latest
 ```
+Requires `gcloud` CLI installed (`curl -LsSf https://sdk.cloud.google.com | bash` or the platform installer). This is the only method where "install the skill" and "get access" don't require anyone to hand you a file — the dev logs in with their own Google account, and real access to a given Sheet still comes from that Sheet being shared with them, same as always.
+
+**Method 2: Shared OAuth client credential file — when the org already maintains one.**
+```bash
+claude mcp add mcp-google-sheets -s project \
+  -e CREDENTIALS_PATH=.claude/gcp-oauth.keys.json \
+  -e TOKEN_PATH=.claude/mcp-google-sheets-token.json \
+  -- uvx --with "mcp<2" mcp-google-sheets@latest
+```
+```
+.claude/gcp-oauth.keys.json       ← OAuth client credentials (from GCP Console, Credentials → OAuth client ID → Desktop app) — git-ignored, per developer, NOT something `npx skills add` ships or that a new/external dev has by default
+.claude/mcp-google-sheets-token.json  ← generated on first browser login, git-ignored
+```
+This is the pre-existing path in Altavia-style client projects. It still requires an interactive browser login on first use — `CREDENTIALS_PATH` identifies the app, it is not a bypass of login.
+
+**Method 3: Service Account — for headless/CI use only**, not appropriate for an interactive dev workflow. See the upstream README's Method A if this comes up.
 
 ---
 
